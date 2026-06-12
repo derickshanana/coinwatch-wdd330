@@ -1,373 +1,240 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="CoinWatch — Real-time currency exchange rates and cryptocurrency prices in one dashboard."
-    />
-    <title>CoinWatch | Currency & Crypto Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./css/style.css" />
-    <script src="./js/main.js" type="module"></script>
-  </head>
 
-  <body>
-    <!-- ── Header ── -->
-    <header class="site-header">
-      <div class="header-inner">
-        <div class="header-logo">
-          <span class="header-logo__icon">💰</span>
-          <span class="header-logo__text"
-            >Coin<span class="accent">Watch</span></span
-          >
-        </div>
-        <nav class="header-nav" aria-label="Main navigation">
-          <div class="tab-nav" role="tablist">
-            <button
-              class="tab-btn tab-btn--active"
-              data-tab="currencies"
-              role="tab"
-              aria-selected="true"
-            >
-              💱 Currencies
-            </button>
-            <button
-              class="tab-btn"
-              data-tab="crypto"
-              role="tab"
-              aria-selected="false"
-            >
-              ₿ Crypto
-            </button>
-            <button
-              class="tab-btn"
-              data-tab="portfolio"
-              role="tab"
-              aria-selected="false"
-            >
-              📊 Portfolio
-            </button>
-          </div>
-        </nav>
-        <div class="header-actions">
-          <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
-            ☀️ Light
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="CoinWatch — Real-time currency exchange rates and cryptocurrency prices in one dashboard." />
+  <title>CoinWatch | Currency & Crypto Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="./css/style.css" />
+  <script src="./js/main.js" type="module"></script>
+</head>
+
+<body>
+  <!-- ── Header ── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <span class="header-logo__icon">💰</span>
+        <span class="header-logo__text">Coin<span class="accent">Watch</span></span>
+      </div>
+      <nav class="header-nav" aria-label="Main navigation">
+        <div class="tab-nav" role="tablist">
+          <button class="tab-btn tab-btn--active" data-tab="currencies" role="tab" aria-selected="true">
+            💱 Currencies
+          </button>
+          <button class="tab-btn" data-tab="crypto" role="tab" aria-selected="false">
+            ₿ Crypto
+          </button>
+          <button class="tab-btn" data-tab="portfolio" role="tab" aria-selected="false">
+            📊 Portfolio
           </button>
         </div>
+      </nav>
+      <div class="header-actions">
+        <button id="theme-toggle" class="theme-btn" aria-label="Toggle theme">
+          ☀️ Light
+        </button>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <!-- ── Main ── -->
-    <main class="site-main" id="main-content">
-      <!-- ── Currencies Tab ── -->
-      <div
-        class="tab-panel tab-panel--active"
-        id="panel-currencies"
-        role="tabpanel"
-      >
-        <div class="panel-layout">
-          <!-- Left: Rates + Search -->
-          <section
-            class="panel-section panel-section--rates"
-            aria-labelledby="rates-heading"
-          >
-            <div class="section-header">
-              <h2 class="section-title" id="rates-heading">Exchange Rates</h2>
-              <span
-                class="section-meta"
-                id="rates-updated"
-                aria-live="polite"
-              ></span>
+  <!-- ── Main ── -->
+  <main class="site-main" id="main-content">
+    <!-- ── Currencies Tab ── -->
+    <div class="tab-panel tab-panel--active" id="panel-currencies" role="tabpanel">
+      <div class="panel-layout">
+        <!-- Left: Rates + Search -->
+        <section class="panel-section panel-section--rates" aria-labelledby="rates-heading">
+          <div class="section-header">
+            <h2 class="section-title" id="rates-heading">Exchange Rates</h2>
+            <span class="section-meta" id="rates-updated" aria-live="polite"></span>
+          </div>
+
+          <div class="controls-bar">
+            <div class="control-group">
+              <label for="base-currency-select" class="control-label">Base:</label>
+              <select id="base-currency-select" class="control-select">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="JPY">JPY</option>
+                <option value="ZAR">ZAR</option>
+                <option value="CAD">CAD</option>
+                <option value="AUD">AUD</option>
+              </select>
             </div>
+            <input type="search" id="rates-search" class="control-search" placeholder="Search currencies..."
+              aria-label="Search currencies" />
+          </div>
 
-            <div class="controls-bar">
-              <div class="control-group">
-                <label for="base-currency-select" class="control-label"
-                  >Base:</label
-                >
-                <select id="base-currency-select" class="control-select">
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="JPY">JPY</option>
-                  <option value="ZAR">ZAR</option>
-                  <option value="CAD">CAD</option>
-                  <option value="AUD">AUD</option>
-                </select>
+          <div id="rates-list" class="rates-grid" role="list" aria-label="Exchange rates"></div>
+        </section>
+
+        <!-- Right: Converter + Chart -->
+        <aside class="panel-section panel-section--tools">
+          <!-- Converter -->
+          <div class="converter-card">
+            <h3 class="converter-title">Currency Converter</h3>
+            <form id="converter-form" class="converter-form" aria-label="Currency converter">
+              <div class="converter-row">
+                <input type="number" id="converter-amount" class="converter-input" placeholder="Amount" min="0"
+                  step="any" aria-label="Amount to convert" />
               </div>
-              <input
-                type="search"
-                id="rates-search"
-                class="control-search"
-                placeholder="Search currencies..."
-                aria-label="Search currencies"
-              />
-            </div>
-
-            <div
-              id="rates-list"
-              class="rates-grid"
-              role="list"
-              aria-label="Exchange rates"
-            ></div>
-          </section>
-
-          <!-- Right: Converter + Chart -->
-          <aside class="panel-section panel-section--tools">
-            <!-- Converter -->
-            <div class="converter-card">
-              <h3 class="converter-title">Currency Converter</h3>
-              <form
-                id="converter-form"
-                class="converter-form"
-                aria-label="Currency converter"
-              >
-                <div class="converter-row">
-                  <input
-                    type="number"
-                    id="converter-amount"
-                    class="converter-input"
-                    placeholder="Amount"
-                    min="0"
-                    step="any"
-                    aria-label="Amount to convert"
-                  />
-                </div>
-                <div class="converter-row converter-selects">
-                  <select
-                    id="converter-from"
-                    class="converter-select"
-                    aria-label="From currency"
-                  ></select>
-                  <button
-                    type="button"
-                    id="converter-swap"
-                    class="swap-btn"
-                    aria-label="Swap currencies"
-                  >
-                    ⇄
-                  </button>
-                  <select
-                    id="converter-to"
-                    class="converter-select"
-                    aria-label="To currency"
-                  ></select>
-                </div>
-                <div
-                  id="converter-result"
-                  class="converter-result"
-                  aria-live="polite"
-                ></div>
-              </form>
-            </div>
-
-            <!-- Chart Pair Selector -->
-            <div class="chart-pair-selector">
-              <h3 class="converter-title">7-Day Rate History</h3>
-              <div class="chart-pair-controls">
-                <select
-                  id="chart-from"
-                  class="converter-select"
-                  aria-label="Chart from currency"
-                >
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="GBP">GBP</option>
-                  <option value="JPY">JPY</option>
-                  <option value="ZAR">ZAR</option>
-                  <option value="CAD">CAD</option>
-                  <option value="AUD">AUD</option>
-                  <option value="CHF">CHF</option>
-                </select>
-                <span class="chart-pair-arrow">→</span>
-                <select
-                  id="chart-to"
-                  class="converter-select"
-                  aria-label="Chart to currency"
-                >
-                  <option value="EUR">EUR</option>
-                  <option value="USD">USD</option>
-                  <option value="GBP">GBP</option>
-                  <option value="JPY">JPY</option>
-                  <option value="ZAR">ZAR</option>
-                  <option value="CAD">CAD</option>
-                  <option value="AUD">AUD</option>
-                  <option value="CHF">CHF</option>
-                </select>
-                <button id="chart-draw-btn" class="chart-draw-btn">
-                  View Chart
+              <div class="converter-row converter-selects">
+                <select id="converter-from" class="converter-select" aria-label="From currency"></select>
+                <button type="button" id="converter-swap" class="swap-btn" aria-label="Swap currencies">
+                  ⇄
                 </button>
+                <select id="converter-to" class="converter-select" aria-label="To currency"></select>
               </div>
-              <p class="chart-hint">
-                Or click any currency card to chart it vs your base currency
-              </p>
-            </div>
+              <div id="converter-result" class="converter-result" aria-live="polite"></div>
+            </form>
+          </div>
 
-            <!-- 7-day Chart -->
-            <div id="chart-section" class="chart-card hidden">
-              <canvas
-                id="rate-chart"
-                width="400"
-                height="220"
-                aria-label="7-day exchange rate chart"
-              ></canvas>
+          <!-- Chart Pair Selector -->
+          <div class="chart-pair-selector">
+            <h3 class="converter-title">7-Day Rate History</h3>
+            <div class="chart-pair-controls">
+              <select id="chart-from" class="converter-select" aria-label="Chart from currency">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="JPY">JPY</option>
+                <option value="ZAR">ZAR</option>
+                <option value="CAD">CAD</option>
+                <option value="AUD">AUD</option>
+                <option value="CHF">CHF</option>
+              </select>
+              <span class="chart-pair-arrow">→</span>
+              <select id="chart-to" class="converter-select" aria-label="Chart to currency">
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+                <option value="GBP">GBP</option>
+                <option value="JPY">JPY</option>
+                <option value="ZAR">ZAR</option>
+                <option value="CAD">CAD</option>
+                <option value="AUD">AUD</option>
+                <option value="CHF">CHF</option>
+              </select>
+              <button id="chart-draw-btn" class="chart-draw-btn">
+                View Chart
+              </button>
             </div>
+            <p class="chart-hint">
+              Or click any currency card to chart it vs your base currency
+            </p>
+          </div>
 
-            <!-- Chart hint when hidden -->
-            <div class="chart-hint-card" id="chart-hint-card">
-              <span class="chart-hint-icon">📈</span>
-              <p>Select a currency pair above or click any rate card</p>
-            </div>
-          </aside>
+          <!-- 7-day Chart -->
+          <div id="chart-section" class="chart-card hidden">
+            <canvas id="rate-chart" width="400" height="220" aria-label="7-day exchange rate chart"></canvas>
+          </div>
+
+          <!-- Chart hint when hidden -->
+          <div class="chart-hint-card" id="chart-hint-card">
+            <span class="chart-hint-icon">📈</span>
+            <p>Select a currency pair above or click any rate card</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ── Crypto Tab ── -->
+    <div class="tab-panel" id="panel-crypto" role="tabpanel">
+      <div class="section-header">
+        <h2 class="section-title">Cryptocurrency Prices</h2>
+        <span class="section-meta" id="crypto-updated" aria-live="polite"></span>
+      </div>
+
+      <div class="controls-bar">
+        <input type="search" id="crypto-search" class="control-search" placeholder="Search coins..."
+          aria-label="Search cryptocurrencies" />
+        <div class="filter-group" role="group" aria-label="Filter by performance">
+          <button class="filter-btn filter-btn--active" data-filter="all">
+            All
+          </button>
+          <button class="filter-btn" data-filter="gainers">▲ Gainers</button>
+          <button class="filter-btn" data-filter="losers">▼ Losers</button>
+        </div>
+        <div class="control-group">
+          <label for="crypto-sort" class="control-label">Sort:</label>
+          <select id="crypto-sort" class="control-select" aria-label="Sort cryptocurrencies">
+            <option value="market_cap">Market Cap</option>
+            <option value="price">Price</option>
+            <option value="change">24h Change</option>
+          </select>
         </div>
       </div>
 
-      <!-- ── Crypto Tab ── -->
-      <div class="tab-panel" id="panel-crypto" role="tabpanel">
-        <div class="section-header">
-          <h2 class="section-title">Cryptocurrency Prices</h2>
-          <span
-            class="section-meta"
-            id="crypto-updated"
-            aria-live="polite"
-          ></span>
-        </div>
+      <p class="crypto-hint">Click any coin card to see full details</p>
+      <div id="crypto-list" class="crypto-grid" role="list" aria-label="Cryptocurrency prices"></div>
+    </div>
 
-        <div class="controls-bar">
-          <input
-            type="search"
-            id="crypto-search"
-            class="control-search"
-            placeholder="Search coins..."
-            aria-label="Search cryptocurrencies"
-          />
-          <div
-            class="filter-group"
-            role="group"
-            aria-label="Filter by performance"
-          >
-            <button class="filter-btn filter-btn--active" data-filter="all">
-              All
-            </button>
-            <button class="filter-btn" data-filter="gainers">▲ Gainers</button>
-            <button class="filter-btn" data-filter="losers">▼ Losers</button>
-          </div>
-          <div class="control-group">
-            <label for="crypto-sort" class="control-label">Sort:</label>
-            <select
-              id="crypto-sort"
-              class="control-select"
-              aria-label="Sort cryptocurrencies"
-            >
-              <option value="market_cap">Market Cap</option>
-              <option value="price">Price</option>
-              <option value="change">24h Change</option>
-            </select>
-          </div>
-        </div>
-
-        <p class="crypto-hint">Click any coin card to see full details</p>
-        <div
-          id="crypto-list"
-          class="crypto-grid"
-          role="list"
-          aria-label="Cryptocurrency prices"
-        ></div>
+    <!-- ── Portfolio Tab ── -->
+    <div class="tab-panel" id="panel-portfolio" role="tabpanel">
+      <div class="section-header">
+        <h2 class="section-title">My Portfolio</h2>
       </div>
 
-      <!-- ── Portfolio Tab ── -->
-      <div class="tab-panel" id="panel-portfolio" role="tabpanel">
-        <div class="section-header">
-          <h2 class="section-title">My Portfolio</h2>
+      <!-- Portfolio Stats -->
+      <div class="portfolio-stats">
+        <div class="portfolio-stat">
+          <span class="portfolio-stat__label">Total Value</span>
+          <span class="portfolio-stat__value" id="portfolio-total-value">$0.00</span>
         </div>
-
-        <!-- Portfolio Stats -->
-        <div class="portfolio-stats">
-          <div class="portfolio-stat">
-            <span class="portfolio-stat__label">Total Value</span>
-            <span class="portfolio-stat__value" id="portfolio-total-value"
-              >$0.00</span
-            >
-          </div>
-          <div class="portfolio-stat">
-            <span class="portfolio-stat__label">Total P&amp;L</span>
-            <span class="portfolio-stat__value" id="portfolio-total-pnl"
-              >$0.00</span
-            >
-          </div>
+        <div class="portfolio-stat">
+          <span class="portfolio-stat__label">Total P&amp;L</span>
+          <span class="portfolio-stat__value" id="portfolio-total-pnl">$0.00</span>
         </div>
+      </div>
 
-        <!-- Holdings Table -->
-        <div id="portfolio-holdings" class="portfolio-holdings"></div>
+      <!-- Holdings Table -->
+      <div id="portfolio-holdings" class="portfolio-holdings"></div>
 
-        <!-- Add Coin Form -->
-        <div class="portfolio-add-card">
-          <h3 class="portfolio-add-title">Add a Holding</h3>
-          <form id="portfolio-add-form" class="portfolio-add-form">
-            <div class="portfolio-form-row">
-              <div class="portfolio-form-group">
-                <label for="portfolio-coin-select">Coin</label>
-                <select
-                  id="portfolio-coin-select"
-                  class="control-select"
-                  required
-                  aria-label="Select coin"
-                ></select>
-              </div>
-              <div class="portfolio-form-group">
-                <label for="portfolio-amount">Amount</label>
-                <input
-                  type="number"
-                  id="portfolio-amount"
-                  class="converter-input"
-                  placeholder="e.g. 0.5"
-                  min="0"
-                  step="any"
-                  required
-                  aria-label="Amount held"
-                />
-              </div>
-              <div class="portfolio-form-group">
-                <label for="portfolio-buy-price">Buy Price (USD)</label>
-                <input
-                  type="number"
-                  id="portfolio-buy-price"
-                  class="converter-input"
-                  placeholder="e.g. 45000"
-                  min="0"
-                  step="any"
-                  required
-                  aria-label="Purchase price"
-                />
-              </div>
-              <button type="submit" class="portfolio-add-btn">+ Add</button>
+      <!-- Add Coin Form -->
+      <div class="portfolio-add-card">
+        <h3 class="portfolio-add-title">Add a Holding</h3>
+        <form id="portfolio-add-form" class="portfolio-add-form">
+          <div class="portfolio-form-row">
+            <div class="portfolio-form-group">
+              <label for="portfolio-coin-select">Coin</label>
+              <select id="portfolio-coin-select" class="control-select" required aria-label="Select coin"></select>
             </div>
-          </form>
-        </div>
+            <div class="portfolio-form-group">
+              <label for="portfolio-amount">Amount</label>
+              <input type="number" id="portfolio-amount" class="converter-input" placeholder="e.g. 0.5" min="0"
+                step="any" required aria-label="Amount held" />
+            </div>
+            <div class="portfolio-form-group">
+              <label for="portfolio-buy-price">Buy Price (USD)</label>
+              <input type="number" id="portfolio-buy-price" class="converter-input" placeholder="e.g. 45000" min="0"
+                step="any" required aria-label="Purchase price" />
+            </div>
+            <button type="submit" class="portfolio-add-btn">+ Add</button>
+          </div>
+        </form>
       </div>
-    </main>
+    </div>
+  </main>
 
-    <!-- ── Footer ── -->
-    <footer class="site-footer">
-      <p>
-        CoinWatch &copy; 2026 — Data from
-        <a href="https://www.frankfurter.app" target="_blank" rel="noopener"
-          >Frankfurter API</a
-        >
-        &amp;
-        <a href="https://www.coingecko.com" target="_blank" rel="noopener"
-          >CoinGecko API</a
-        >
-      </p>
-      <p class="footer-note">
-        For informational purposes only. Not financial advice.
-      </p>
-    </footer>
-  </body>
+  <!-- ── Footer ── -->
+  <footer class="site-footer">
+    <p>
+      CoinWatch &copy; 2026 — Data from
+      <a href="https://www.frankfurter.app" target="_blank" rel="noopener">Frankfurter API</a>
+      &amp;
+      <a href="https://www.coingecko.com" target="_blank" rel="noopener">CoinGecko API</a>
+    </p>
+    <p class="footer-note">
+      For informational purposes only. Not financial advice.
+    </p>
+  </footer>
+</body>
+
 </html>

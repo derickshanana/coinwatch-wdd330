@@ -10,9 +10,11 @@ import CryptoList from "./CryptoList.mjs";
 import RateChart from "./RateChart.mjs";
 import Portfolio from "./Portfolio.mjs";
 import CoinDetail from "./CoinDetail.mjs";
+import { animateCardEntrance } from "./animations.mjs";
 import { getLocalStorage, setLocalStorage } from "./utils.mjs";
 
-// ── Theme ──────────────────────────────────────────────────────────────────
+// ── Theme ───────────────────────────────────────────────────────────────────
+
 function initTheme() {
   const saved = getLocalStorage("cw-theme") || "dark";
   document.documentElement.dataset.theme = saved;
@@ -21,18 +23,23 @@ function initTheme() {
 
 function updateThemeBtn(theme) {
   const btn = document.getElementById("theme-toggle");
-  if (btn) btn.textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
+  if (btn) {
+    btn.textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
+  }
 }
 
-function toggleTheme() {
+function toggleTheme(chart) {
   const current = document.documentElement.dataset.theme || "dark";
   const next = current === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
   setLocalStorage("cw-theme", next);
   updateThemeBtn(next);
+  // Redraw canvas chart in new theme colors
+  if (chart) chart.redraw();
 }
 
-// ── Tab Switching ──────────────────────────────────────────────────────────
+// ── Tab Switching ────────────────────────────────────────────────────────────
+
 function initTabs() {
   const tabs = document.querySelectorAll(".tab-btn");
   const panels = document.querySelectorAll(".tab-panel");
@@ -40,30 +47,35 @@ function initTabs() {
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       const target = tab.dataset.tab;
-      tabs.forEach((t) => t.classList.remove("tab-btn--active"));
+
+      tabs.forEach((t) => {
+        t.classList.remove("tab-btn--active");
+        t.setAttribute("aria-selected", "false");
+      });
       panels.forEach((p) => p.classList.remove("tab-panel--active"));
+
       tab.classList.add("tab-btn--active");
-      document
-        .getElementById(`panel-${target}`)
-        ?.classList.add("tab-panel--active");
+      tab.setAttribute("aria-selected", "true");
+
+      const panel = document.getElementById(`panel-${target}`);
+      if (panel) panel.classList.add("tab-panel--active");
     });
   });
 }
 
-// ── Main Init ──────────────────────────────────────────────────────────────
+// ── Main Init ────────────────────────────────────────────────────────────────
+
 async function init() {
   initTheme();
   initTabs();
-
-  // Theme toggle
-  document
-    .getElementById("theme-toggle")
-    ?.addEventListener("click", toggleTheme);
 
   // ── Exchange Rates ──
   const ratesContainer = document.getElementById("rates-list");
   const ratesModule = new ExchangeRates(ratesContainer);
   await ratesModule.init();
+
+  // Animate cards in on first render
+  animateCardEntrance(ratesContainer.querySelectorAll(".rate-card"));
 
   // ── Currency Converter ──
   const converterForm = document.getElementById("converter-form");
@@ -77,21 +89,20 @@ async function init() {
   const chart = chartCanvas ? new RateChart(chartCanvas) : null;
 
   if (chart) {
+    // Click on a rate card to chart it
     ratesContainer.addEventListener("click", async (e) => {
       const card = e.target.closest(".rate-card");
       if (!card || e.target.classList.contains("fav-btn")) return;
       const code = card.dataset.code;
       const base = ratesModule.getBaseCurrency();
 
-      // Hide hint card, show chart
       document.getElementById("chart-hint-card")?.classList.add("hidden");
       document.getElementById("chart-section")?.classList.remove("hidden");
-
       await chart.draw(base, code);
     });
   }
 
-  // Chart pair selector (manual currency pair input)
+  // Chart pair selector (manual input)
   const chartFromSel = document.getElementById("chart-from");
   const chartToSel = document.getElementById("chart-to");
   const chartDrawBtn = document.getElementById("chart-draw-btn");
@@ -109,6 +120,7 @@ async function init() {
   if (baseSel) {
     baseSel.addEventListener("change", async () => {
       await ratesModule.setBaseCurrency(baseSel.value);
+      animateCardEntrance(ratesContainer.querySelectorAll(".rate-card"), 20);
     });
   }
 
@@ -120,10 +132,18 @@ async function init() {
     });
   }
 
+  // ── Theme toggle (wired here so chart can be passed in) ──
+  document.getElementById("theme-toggle")?.addEventListener("click", () => {
+    toggleTheme(chart);
+  });
+
   // ── Crypto List ──
   const cryptoContainer = document.getElementById("crypto-list");
   const cryptoModule = new CryptoList(cryptoContainer);
   await cryptoModule.init();
+
+  // Animate crypto cards in
+  animateCardEntrance(cryptoContainer.querySelectorAll(".coin-card"), 25);
 
   // ── Coin Detail Modal ──
   const coinDetail = new CoinDetail();
@@ -132,10 +152,7 @@ async function init() {
   // ── Portfolio ──
   const portfolioContainer = document.getElementById("portfolio-holdings");
   if (portfolioContainer) {
-    const portfolio = new Portfolio(
-      portfolioContainer,
-      cryptoModule.getCoins(),
-    );
+    const portfolio = new Portfolio(portfolioContainer, cryptoModule.getCoins());
     portfolio.init();
     cryptoModule.portfolio = portfolio;
   }
@@ -148,7 +165,7 @@ async function init() {
     });
   }
 
-  // ── Performance filter ──
+  // ── Performance filter buttons ──
   document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
       document

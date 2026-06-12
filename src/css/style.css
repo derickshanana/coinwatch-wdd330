@@ -1,6 +1,8 @@
 /* ═══════════════════════════════════════════════════════
    CoinWatch — style.css
    Global styles, theme variables, layout, animations
+   All BEM selectors are written as flat class names to
+   avoid CSS nesting syntax errors during build.
    ═══════════════════════════════════════════════════════ */
 
 /* ── CSS Custom Properties (Themes) ── */
@@ -94,6 +96,40 @@ button {
   display: none !important;
 }
 
+/* ── Skip link (accessibility) ── */
+.skip-link {
+  position: absolute;
+  top: -999px;
+  left: 0;
+  background: var(--blue);
+  color: white;
+  padding: 0.5rem 1rem;
+  z-index: 9999;
+  border-radius: 0 0 6px 0;
+  font-size: 0.9rem;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 2.5rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.empty-state span {
+  font-size: 2rem;
+}
+
 /* ── Header ── */
 .site-header {
   background: var(--surface);
@@ -125,6 +161,10 @@ button {
 
 .header-logo__icon {
   font-size: 1.5rem;
+}
+
+.header-logo__text {
+  font-size: 1.3rem;
 }
 
 .header-nav {
@@ -296,6 +336,7 @@ button {
 .control-search:focus {
   outline: none;
   border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
 .control-search::placeholder {
@@ -350,10 +391,13 @@ button {
   position: relative;
 }
 
-.rate-card:hover {
+.rate-card:hover,
+.rate-card:focus-visible {
   transform: translateY(-3px);
   box-shadow: var(--shadow);
   border-color: var(--blue);
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .rate-card__header {
@@ -444,9 +488,12 @@ button {
   position: relative;
 }
 
-.coin-card:hover {
+.coin-card:hover,
+.coin-card:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 
 .coin-card__rank {
@@ -543,6 +590,12 @@ button {
   transform: scale(1.2);
 }
 
+.fav-btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
 .fav-btn--active {
   color: var(--gold);
 }
@@ -593,6 +646,7 @@ button {
 .converter-input:focus {
   outline: none;
   border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
 .converter-select {
@@ -632,7 +686,7 @@ button {
   transition: background-color 0.4s ease;
 }
 
-.converter-result--updated {
+.result--updated {
   background-color: rgba(26, 115, 232, 0.15);
 }
 
@@ -661,6 +715,23 @@ button {
 
 .converter-result__equals {
   color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.converter-result__note {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.converter-loading {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.converter-error {
+  color: var(--red);
   font-size: 0.85rem;
 }
 
@@ -699,10 +770,47 @@ button {
   color: var(--text-muted);
 }
 
-.chart-hint-card-icon {
+.chart-hint-icon {
   font-size: 2rem;
   display: block;
   margin-bottom: 0.5rem;
+}
+
+/* ── Chart Pair Selector ── */
+.chart-pair-selector {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.chart-pair-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.chart-pair-arrow {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+.chart-draw-btn {
+  padding: 0.45rem 1rem;
+  background: var(--blue);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: opacity var(--transition);
+  margin: 0;
+}
+
+.chart-draw-btn:hover {
+  opacity: 0.85;
 }
 
 /* ── Skeleton Loading ── */
@@ -717,12 +825,10 @@ button {
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    var(--surface-2) 25%,
-    var(--border) 50%,
-    var(--surface-2) 75%
-  );
+  background: linear-gradient(90deg,
+      var(--surface-2) 25%,
+      var(--border) 50%,
+      var(--surface-2) 75%);
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
@@ -798,19 +904,70 @@ button {
   color: var(--red) !important;
 }
 
-/* ── Card Hover Lift ── */
-@keyframes cardPulse {
+/* ── Card pulse on significant price move ── */
+@keyframes cardPulseUp {
   0% {
-    box-shadow: 0 0 0 0 rgba(26, 115, 232, 0.4);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
   }
 
   70% {
-    box-shadow: 0 0 0 8px rgba(26, 115, 232, 0);
+    box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
   }
 
   100% {
-    box-shadow: 0 0 0 0 rgba(26, 115, 232, 0);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
   }
+}
+
+@keyframes cardPulseDown {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+  }
+
+  70% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.card-pulse--up {
+  animation: cardPulseUp 1s ease-out;
+}
+
+.card-pulse--down {
+  animation: cardPulseDown 1s ease-out;
+}
+
+/* ── Loading Spinner ── */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cw-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.cw-spinner--fade {
+  opacity: 0;
+}
+
+.cw-spinner__ring {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
 }
 
 /* ── Toast Notification ── */
@@ -827,6 +984,7 @@ button {
   opacity: 0;
   transition: all 0.4s ease;
   max-width: 320px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .cw-toast--info {
@@ -860,6 +1018,13 @@ button {
   }
 }
 
+/* ── Crypto Tab hints ── */
+.crypto-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
 /* ── Footer ── */
 .site-footer {
   text-align: center;
@@ -870,72 +1035,13 @@ button {
   margin-top: 2rem;
 }
 
-.site-footer p + p {
+.site-footer p+p {
   margin-top: 0.25rem;
 }
 
-/* ── Responsive ── */
-@media (max-width: 500px) {
-  .tab-btn {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.82rem;
-  }
-
-  .header-logo__text {
-    font-size: 1.1rem;
-  }
-
-  .rates-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* ═══════════════════════════════════════════════════════
-   Week 6 additions
-   ═══════════════════════════════════════════════════════ */
-
-/* ── Crypto hint ── */
-.crypto-hint {
+.footer-note {
   font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-bottom: 0.75rem;
-}
-
-/* ── Chart Pair Selector ── */
-.chart-pair-selector {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-}
-
-.chart-pair-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin: 0.75rem 0 0.5rem;
-}
-
-.chart-pair-arrow {
-  color: var(--text-muted);
-  font-size: 1.1rem;
-}
-
-.chart-draw-btn {
-  padding: 0.45rem 1rem;
-  background: var(--blue);
-  color: white;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  transition: opacity var(--transition);
-  margin: 0;
-
-  &:hover {
-    opacity: 0.85;
-  }
+  opacity: 0.7;
 }
 
 /* ── Coin Detail Drawer ── */
@@ -948,14 +1054,14 @@ button {
   justify-content: flex-end;
   opacity: 0;
   transition: opacity 0.3s ease;
+}
 
-  &--visible {
-    opacity: 1;
+.coin-detail-overlay--visible {
+  opacity: 1;
+}
 
-    .coin-detail-drawer {
-      transform: translateX(0);
-    }
-  }
+.coin-detail-overlay--visible .coin-detail-drawer {
+  transform: translateX(0);
 }
 
 .coin-detail-drawer {
@@ -977,146 +1083,146 @@ button {
 
 .coin-detail {
   padding: 1.5rem;
+}
 
-  &__header {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-    position: relative;
-  }
+.coin-detail__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+}
 
-  &__icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-  }
+.coin-detail__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
 
-  &__name {
-    font-size: 1.2rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
+.coin-detail__name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 
-  &__symbol {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-weight: 400;
-  }
+.coin-detail__symbol {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-weight: 400;
+}
 
-  &__rank {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-  }
+.coin-detail__rank {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
 
-  &__close {
-    position: absolute;
-    top: 0;
-    right: 0;
-    font-size: 1.6rem;
-    color: var(--text-muted);
-    line-height: 1;
-    padding: 0.25rem;
-    transition: color var(--transition);
+.coin-detail__close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 1.6rem;
+  color: var(--text-muted);
+  line-height: 1;
+  padding: 0.25rem;
+  transition: color var(--transition);
+}
 
-    &:hover {
-      color: var(--text);
-    }
-  }
+.coin-detail__close:hover {
+  color: var(--text);
+}
 
-  &__price-row {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-  }
+.coin-detail__price-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
 
-  &__price {
-    font-family: var(--font-mono);
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--gold);
-  }
+.coin-detail__price {
+  font-family: var(--font-mono);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--gold);
+}
 
-  &__change {
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
+.coin-detail__change {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
 
-  &__stats-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    margin-bottom: 1.25rem;
-  }
+.coin-detail__stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
 
-  &__stat {
-    background: var(--surface-2);
-    border-radius: 8px;
-    padding: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
+.coin-detail__stat {
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
 
-  &__stat-label {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
+.coin-detail__stat-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
-  &__stat-value {
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    font-weight: 600;
-  }
+.coin-detail__stat-value {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
 
-  &__description {
-    margin-bottom: 1.25rem;
+.coin-detail__description {
+  margin-bottom: 1.25rem;
+}
 
-    h3 {
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-    }
+.coin-detail__description h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
 
-    p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.6;
-    }
-  }
+.coin-detail__description p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
 
-  &__links {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
+.coin-detail__links {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 
-  &__link {
-    padding: 0.4rem 0.9rem;
-    background: var(--surface-2);
-    border-radius: 20px;
-    font-size: 0.8rem;
-    color: var(--blue);
-    text-decoration: none;
-    border: 1px solid var(--border);
-    transition: all var(--transition);
+.coin-detail__link {
+  padding: 0.4rem 0.9rem;
+  background: var(--surface-2);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--blue);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  transition: all var(--transition);
+}
 
-    &:hover {
-      background: var(--blue);
-      color: white;
-      border-color: var(--blue);
-      text-decoration: none;
-    }
-  }
+.coin-detail__link:hover {
+  background: var(--blue);
+  color: white;
+  border-color: var(--blue);
+  text-decoration: none;
 }
 
 /* ── Portfolio Tab ── */
@@ -1136,20 +1242,20 @@ button {
   flex-direction: column;
   gap: 0.25rem;
   min-width: 160px;
+}
 
-  &__label {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
+.portfolio-stat__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
-  &__value {
-    font-family: var(--font-mono);
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--gold);
-  }
+.portfolio-stat__value {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--gold);
 }
 
 .portfolio-holdings {
@@ -1163,12 +1269,12 @@ button {
   padding: 2.5rem;
   text-align: center;
   color: var(--text-muted);
+}
 
-  &__icon {
-    font-size: 2.5rem;
-    display: block;
-    margin-bottom: 0.75rem;
-  }
+.portfolio-empty__icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.75rem;
 }
 
 .portfolio-table-wrapper {
@@ -1181,53 +1287,53 @@ button {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+}
 
-  th {
-    padding: 0.75rem 1rem;
-    text-align: left;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
+.portfolio-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 .portfolio-row {
   border-bottom: 1px solid var(--border);
   transition: background-color var(--transition);
+}
 
-  &:hover {
-    background: var(--surface-2);
-  }
+.portfolio-row:hover {
+  background: var(--surface-2);
+}
 
-  &:last-child {
-    border-bottom: none;
-  }
+.portfolio-row:last-child {
+  border-bottom: none;
 }
 
 .portfolio-cell {
   padding: 0.75rem 1rem;
   vertical-align: middle;
+}
 
-  &--coin {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    white-space: nowrap;
-  }
+.portfolio-cell--coin {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  white-space: nowrap;
+}
 
-  &--mono {
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-  }
+.portfolio-cell--mono {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
 
-  &--value {
-    font-weight: 600;
-    color: var(--gold);
-  }
+.portfolio-cell--value {
+  font-weight: 600;
+  color: var(--gold);
 }
 
 .portfolio-icon {
@@ -1255,13 +1361,13 @@ button {
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   transition: background-color var(--transition);
-
-  &:hover {
-    background: rgba(239, 68, 68, 0.15);
-  }
 }
 
-/* Add Holding Form */
+.portfolio-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* ── Add Holding Form ── */
 .portfolio-add-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1294,12 +1400,12 @@ button {
   gap: 0.35rem;
   flex: 1;
   min-width: 140px;
+}
 
-  label {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
+.portfolio-form-group label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .portfolio-add-btn {
@@ -1314,14 +1420,33 @@ button {
   align-self: flex-end;
   margin: 0;
   height: fit-content;
-
-  &:hover {
-    opacity: 0.85;
-  }
 }
 
-/* ── Responsive tweaks ── */
-@media (max-width: 640px) {
+.portfolio-add-btn:hover {
+  opacity: 0.85;
+}
+
+/* ── Focus visible global ── */
+:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+  .tab-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .header-logo__text {
+    font-size: 1.1rem;
+  }
+
+  .rates-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .coin-detail-drawer {
     max-width: 100%;
   }
@@ -1337,5 +1462,31 @@ button {
   .portfolio-add-btn {
     width: 100%;
     text-align: center;
+  }
+
+  .controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-group {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .coin-detail__stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── High-contrast / reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

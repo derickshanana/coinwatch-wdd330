@@ -1,12 +1,14 @@
 /**
  * ExchangeRates.mjs
  * Fetches and renders live currency exchange rates from Frankfurter API
+ * API: https://api.frankfurter.dev/v1 (stable, free, no key required)
  */
 
 import { formatCurrency, getLocalStorage, setLocalStorage, showToast } from "./utils.mjs";
 import { Favorites } from "./Favorites.mjs";
 
-const BASE_URL = "https://api.frankfurter.dev/v2";
+// ✅ Correct base URL — v1 is the stable endpoint (same as legacy frankfurter.app)
+const BASE_URL = "https://api.frankfurter.dev/v1";
 
 // Supported currencies with display names and flag emojis
 const CURRENCIES = {
@@ -26,32 +28,45 @@ const CURRENCIES = {
     NZD: { name: "New Zealand Dollar", flag: "🇳🇿" },
     SEK: { name: "Swedish Krona", flag: "🇸🇪" },
     NOK: { name: "Norwegian Krone", flag: "🇳🇴" },
+    HKD: { name: "Hong Kong Dollar", flag: "🇭🇰" },
+    DKK: { name: "Danish Krone", flag: "🇩🇰" },
 };
 
-// Build HTML template for a single currency rate card
+/**
+ * Build HTML template for a single currency rate card
+ * @param {string} code - Currency code e.g. "EUR"
+ * @param {number} rate - Numeric rate value
+ * @param {string} baseCurrency - Base currency code
+ */
 function rateCardTemplate(code, rate, baseCurrency) {
     const info = CURRENCIES[code] || { name: code, flag: "💱" };
     const isFav = Favorites.isFavorite("currency", code);
+    const decimals = code === "JPY" || code === "INR" ? 2 : 4;
+
     return `
-    <div class="rate-card" data-code="${code}" data-rate="${rate}">
-      <div class="rate-card__header">
-        <span class="rate-card__flag">${info.flag}</span>
-        <div class="rate-card__info">
-          <span class="rate-card__code">${code}</span>
-          <span class="rate-card__name">${info.name}</span>
-        </div>
-        <button class="fav-btn ${isFav ? "fav-btn--active" : ""}"
-          data-type="currency" data-id="${code}" title="Add to favorites">
-          ${isFav ? "★" : "☆"}
-        </button>
+  <div class="rate-card" data-code="${code}" data-rate="${rate}" role="listitem" tabindex="0"
+       aria-label="${info.name} exchange rate">
+    <div class="rate-card__header">
+      <span class="rate-card__flag" aria-hidden="true">${info.flag}</span>
+      <div class="rate-card__info">
+        <span class="rate-card__code">${code}</span>
+        <span class="rate-card__name">${info.name}</span>
       </div>
-      <div class="rate-card__rate">
-        <span class="rate-value" id="rate-${code}">
-          ${formatCurrency(rate, code === "JPY" ? 2 : 4)}
-        </span>
-        <span class="rate-card__base">per 1 ${baseCurrency}</span>
-      </div>
-    </div>`;
+      <button class="fav-btn ${isFav ? "fav-btn--active" : ""}"
+        data-type="currency" data-id="${code}"
+        title="${isFav ? "Remove from favorites" : "Add to favorites"}"
+        aria-label="${isFav ? "Remove" : "Add"} ${code} ${isFav ? "from" : "to"} favorites"
+        aria-pressed="${isFav}">
+        ${isFav ? "★" : "☆"}
+      </button>
+    </div>
+    <div class="rate-card__rate">
+      <span class="rate-value" id="rate-${code}" data-prev="${rate}">
+        ${formatCurrency(rate, decimals)}
+      </span>
+      <span class="rate-card__base">per 1 ${baseCurrency}</span>
+    </div>
+  </div>`;
 }
 
 export default class ExchangeRates {
@@ -59,32 +74,44 @@ export default class ExchangeRates {
         this.container = containerEl;
         this.baseCurrency = "USD";
         this.rates = {};
+        this.lastUpdated = null;
         this.refreshInterval = null;
     }
 
-    // Initialize: fetch rates and start auto-refresh
+    /** Initialize: fetch rates and start auto-refresh */
     async init() {
         this.showSkeleton();
         await this.fetchRates();
         this.render();
         this.startAutoRefresh();
-        this.bindFavoriteButtons();
     }
 
-    // Fetch latest rates from Frankfurter API
+    /**
+     * Fetch latest rates from Frankfurter API
+     * Endpoint: GET /v1/latest?base=USD
+     * Response: { amount, base, date, rates: { EUR: 0.92, GBP: 0.79, ... } }
+     */
     async fetchRates() {
         try {
-            const res = await fetch(`${BASE_URL}/latest?from=${this.baseCurrency}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const res = await fetch(`${BASE_URL}/latest?base=${this.baseCurrency}`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             const data = await res.json();
+
+            // v1 response: data.rates is a flat object of code → rate
             this.rates = data.rates;
             this.lastUpdated = new Date();
-            setLocalStorage("cw-rates-cache", { rates: this.rates, base: this.baseCurrency, time: Date.now() });
+            setLocalStorage("cw-rates-cache", {
+                rates: this.rates,
+                base: this.baseCurrency,
+                time: Date.now(),
+            });
         } catch (err) {
-            // Fall back to cached data if available
+            console.error("ExchangeRates fetch error:", err);
+            // Fall back to cached data
             const cached = getLocalStorage("cw-rates-cache");
             if (cached && cached.base === this.baseCurrency) {
                 this.rates = cached.rates;
+                this.lastUpdated = new Date(cached.time);
                 showToast("Using cached rates — could not reach server", "warning");
             } else {
                 showToast("Failed to load exchange rates", "error");
@@ -92,38 +119,51 @@ export default class ExchangeRates {
         }
     }
 
-    // Render all rate cards
+    /** Render all rate cards, favourites first then alphabetical */
     render() {
-        const favCodes = Favorites.getFavorites("currency");
-        const allCodes = Object.keys(this.rates).filter(c => CURRENCIES[c]);
+        if (!this.rates || Object.keys(this.rates).length === 0) {
+            this.container.innerHTML = `
+        <div class="empty-state">
+          <span aria-hidden="true">⚠️</span>
+          <p>Could not load exchange rates. Check your connection and try again.</p>
+        </div>`;
+            return;
+        }
 
-        // Sort: favorites first, then alphabetical
+        const favCodes = Favorites.getFavorites("currency");
+        const allCodes = Object.keys(this.rates).filter((c) => CURRENCIES[c]);
+
+        // Favorites first, then remaining sorted alphabetically
         const sorted = [
-            ...favCodes.filter(c => allCodes.includes(c)),
-            ...allCodes.filter(c => !favCodes.includes(c)).sort(),
+            ...favCodes.filter((c) => allCodes.includes(c)),
+            ...allCodes.filter((c) => !favCodes.includes(c)).sort(),
         ];
 
         this.container.innerHTML = sorted
-            .map(code => rateCardTemplate(code, this.rates[code], this.baseCurrency))
+            .map((code) => rateCardTemplate(code, this.rates[code], this.baseCurrency))
             .join("");
 
         this.updateTimestamp();
         this.bindFavoriteButtons();
     }
 
-    // Update only the rate values (for live refresh) with flash animation
+    /**
+     * Update only the numeric values in-place with flash animation.
+     * Avoids full re-render on auto-refresh to prevent layout shift.
+     */
     updateRateValues() {
         Object.entries(this.rates).forEach(([code, rate]) => {
             const el = document.getElementById(`rate-${code}`);
             if (!el) return;
-            const oldVal = parseFloat(el.dataset.prev || 0);
-            const newVal = rate;
-            el.dataset.prev = newVal;
-            el.textContent = formatCurrency(newVal, code === "JPY" ? 2 : 4);
 
-            // Flash animation on change
-            if (oldVal && oldVal !== newVal) {
-                const cls = newVal > oldVal ? "flash--up" : "flash--down";
+            const oldVal = parseFloat(el.dataset.prev || 0);
+            const decimals = code === "JPY" || code === "INR" ? 2 : 4;
+            el.dataset.prev = rate;
+            el.textContent = formatCurrency(rate, decimals);
+
+            // Flash animation only when value actually changed
+            if (oldVal && oldVal !== rate) {
+                const cls = rate > oldVal ? "flash--up" : "flash--down";
                 el.classList.add(cls);
                 setTimeout(() => el.classList.remove(cls), 600);
             }
@@ -131,7 +171,7 @@ export default class ExchangeRates {
         this.updateTimestamp();
     }
 
-    // Change the base currency and re-fetch
+    /** Change the base currency and re-fetch */
     async setBaseCurrency(code) {
         this.baseCurrency = code;
         this.showSkeleton();
@@ -139,36 +179,41 @@ export default class ExchangeRates {
         this.render();
     }
 
-    // Filter displayed cards by search query
+    /** Filter displayed cards by search query */
     filterBySearch(query) {
-        const q = query.toLowerCase();
-        this.container.querySelectorAll(".rate-card").forEach(card => {
+        const q = query.toLowerCase().trim();
+        this.container.querySelectorAll(".rate-card").forEach((card) => {
             const code = card.dataset.code.toLowerCase();
             const name = (CURRENCIES[card.dataset.code]?.name || "").toLowerCase();
-            card.style.display = code.includes(q) || name.includes(q) ? "" : "none";
+            card.style.display = !q || code.includes(q) || name.includes(q) ? "" : "none";
         });
     }
 
-    // Auto-refresh every 60 seconds
+    /** Auto-refresh every 60 seconds */
     startAutoRefresh() {
         this.refreshInterval = setInterval(async () => {
             await this.fetchRates();
             this.updateRateValues();
-        }, 60000);
+        }, 60_000);
     }
 
     stopAutoRefresh() {
         if (this.refreshInterval) clearInterval(this.refreshInterval);
     }
 
-    // Show loading skeleton
+    /** Show skeleton loading placeholders */
     showSkeleton() {
-        this.container.innerHTML = Array(8).fill(0).map(() => `
-      <div class="rate-card rate-card--skeleton">
+        this.container.innerHTML = Array(8)
+            .fill(0)
+            .map(
+                () => `
+      <div class="rate-card rate-card--skeleton" aria-hidden="true">
         <div class="skeleton skeleton--flag"></div>
         <div class="skeleton skeleton--text"></div>
         <div class="skeleton skeleton--rate"></div>
-      </div>`).join("");
+      </div>`
+            )
+            .join("");
     }
 
     updateTimestamp() {
@@ -179,7 +224,7 @@ export default class ExchangeRates {
     }
 
     bindFavoriteButtons() {
-        this.container.querySelectorAll(".fav-btn").forEach(btn => {
+        this.container.querySelectorAll(".fav-btn").forEach((btn) => {
             btn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 const { type, id } = btn.dataset;
@@ -189,7 +234,7 @@ export default class ExchangeRates {
         });
     }
 
-    // Get the current rates object (used by converter)
+    /** Get the current rates object (used by converter) */
     getRates() {
         return this.rates;
     }
