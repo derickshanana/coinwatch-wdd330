@@ -825,10 +825,12 @@ button {
 }
 
 .skeleton {
-  background: linear-gradient(90deg,
-      var(--surface-2) 25%,
-      var(--border) 50%,
-      var(--surface-2) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--border) 50%,
+    var(--surface-2) 75%
+  );
   background-size: 800px 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
@@ -1035,7 +1037,7 @@ button {
   margin-top: 2rem;
 }
 
-.site-footer p+p {
+.site-footer p + p {
   margin-top: 0.25rem;
 }
 
@@ -1482,7 +1484,6 @@ button {
 
 /* ── High-contrast / reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {

@@ -152,7 +152,10 @@ async function init() {
   // ── Portfolio ──
   const portfolioContainer = document.getElementById("portfolio-holdings");
   if (portfolioContainer) {
-    const portfolio = new Portfolio(portfolioContainer, cryptoModule.getCoins());
+    const portfolio = new Portfolio(
+      portfolioContainer,
+      cryptoModule.getCoins(),
+    );
     portfolio.init();
     cryptoModule.portfolio = portfolio;
   }
