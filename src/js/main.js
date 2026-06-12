@@ -1,7 +1,7 @@
 /**
  * main.js
- * CoinWatch entry point
- * Initializes all modules, handles tab switching and theme toggle
+ * CoinWatch application entry point
+ * Initializes all modules, loads partials, handles tabs and theme
  */
 
 import ExchangeRates from "./ExchangeRates.mjs";
@@ -11,7 +11,11 @@ import RateChart from "./RateChart.mjs";
 import Portfolio from "./Portfolio.mjs";
 import CoinDetail from "./CoinDetail.mjs";
 import { animateCardEntrance } from "./animations.mjs";
-import { getLocalStorage, setLocalStorage } from "./utils.mjs";
+import {
+  getLocalStorage,
+  setLocalStorage,
+  loadHeaderFooter,
+} from "./utils.mjs";
 
 // ── Theme ───────────────────────────────────────────────────────────────────
 
@@ -25,6 +29,10 @@ function updateThemeBtn(theme) {
   const btn = document.getElementById("theme-toggle");
   if (btn) {
     btn.textContent = theme === "dark" ? "☀️ Light" : "🌙 Dark";
+    btn.setAttribute(
+      "aria-label",
+      `Switch to ${theme === "dark" ? "light" : "dark"} mode`,
+    );
   }
 }
 
@@ -66,8 +74,14 @@ function initTabs() {
 // ── Main Init ────────────────────────────────────────────────────────────────
 
 async function init() {
+  // Apply theme before anything renders to prevent flash
   initTheme();
-  initTabs();
+
+  // Load header and footer from partials, then init tabs & theme button
+  await loadHeaderFooter(() => {
+    initTheme(); // Re-apply theme so the button text is correct after header renders
+    initTabs();
+  });
 
   // ── Exchange Rates ──
   const ratesContainer = document.getElementById("rates-list");
@@ -89,7 +103,7 @@ async function init() {
   const chart = chartCanvas ? new RateChart(chartCanvas) : null;
 
   if (chart) {
-    // Click on a rate card to chart it
+    // Click on a rate card to chart it vs the current base currency
     ratesContainer.addEventListener("click", async (e) => {
       const card = e.target.closest(".rate-card");
       if (!card || e.target.classList.contains("fav-btn")) return;
@@ -132,7 +146,7 @@ async function init() {
     });
   }
 
-  // ── Theme toggle (wired here so chart can be passed in) ──
+  // ── Theme toggle (wired after header loads so button exists) ──
   document.getElementById("theme-toggle")?.addEventListener("click", () => {
     toggleTheme(chart);
   });
